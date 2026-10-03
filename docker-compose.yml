@@ -18,6 +18,7 @@ services:
       retries: 20
 
   spring:
+    image: ghcr.io/5nel-day1/be:latest
     build: .
     container_name: sku-spring
     environment:
