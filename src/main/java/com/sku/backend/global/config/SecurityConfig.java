@@ -1,4 +1,4 @@
-package com.sku.backend.global;
+package com.sku.backend.global.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
