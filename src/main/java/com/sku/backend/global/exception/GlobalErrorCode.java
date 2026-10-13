@@ -22,6 +22,8 @@ public enum GlobalErrorCode implements BaseErrorCode {
     EMAIL_ALREADY_EXISTS("A004", "이미 가입된 이메일입니다.", HttpStatus.CONFLICT),
     USER_NOT_FOUND("A005", "존재하지 않는 사용자입니다.", HttpStatus.NOT_FOUND),
     INVALID_PASSWORD("A006", "기존 비밀번호가 일치하지 않습니다.", HttpStatus.BAD_REQUEST),
+    STUDENT_ID_ALREADY_EXISTS("A007", "이미 존재하는 학번입니다.", HttpStatus.CONFLICT),
+    ADMIN_CODE_ALREADY_EXISTS("A008", "이미 존재하는 관리자 코드입니다.", HttpStatus.CONFLICT),
 
     // 제보 도메인 에러코드 (R)
     REPORT_NOT_FOUND("R001", "존재하지 않는 제보입니다.", HttpStatus.NOT_FOUND),
