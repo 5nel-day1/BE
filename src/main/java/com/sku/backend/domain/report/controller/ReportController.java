@@ -1,6 +1,7 @@
 package com.sku.backend.domain.report.controller;
 
 import com.sku.backend.domain.report.dto.ReportCreateRequestDto;
+import com.sku.backend.domain.report.dto.ReportLikeResponseDto;
 import com.sku.backend.domain.report.dto.ReportResponseDto;
 import com.sku.backend.domain.report.entity.ReportStatus;
 import com.sku.backend.domain.report.service.ReportService;
@@ -52,10 +53,12 @@ public class ReportController {
         return BaseResponse.success(responseDtos);
     }
 
-    @Operation(summary = "제보 공감 증가", description = "특정 제보에 공감을 누릅니다.")
+    @Operation(summary = "제보 공감 토글", description = "특정 제보에 유저별 공감을 누르거나 취소합니다.")
     @PostMapping("/{reportId}/like")
-    public BaseResponse<Void> likeReport(@PathVariable Long reportId) {
-        reportService.likeReport(reportId);
-        return BaseResponse.success(null);
+    public BaseResponse<ReportLikeResponseDto> toggleLike(
+            @PathVariable Long reportId,
+            @RequestParam Long userId) {
+        ReportLikeResponseDto responseDto = reportService.toggleLike(reportId, userId);
+        return BaseResponse.success(responseDto);
     }
 }
