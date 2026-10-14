@@ -82,7 +82,13 @@ public class Report extends BaseTimeEntity {
         return String.format("%s %s %s", building.getDescription(), floor.getDescription(), spaceDetail);
     }
 
-    public void addLike() {
+    public void increaseLikeCount() {
         this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
     }
 }

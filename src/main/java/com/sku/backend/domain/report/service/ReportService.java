@@ -1,9 +1,12 @@
 package com.sku.backend.domain.report.service;
 
 import com.sku.backend.domain.report.dto.ReportCreateRequestDto;
+import com.sku.backend.domain.report.dto.ReportLikeResponseDto;
 import com.sku.backend.domain.report.dto.ReportResponseDto;
 import com.sku.backend.domain.report.entity.Report;
+import com.sku.backend.domain.report.entity.ReportLike;
 import com.sku.backend.domain.report.entity.ReportStatus;
+import com.sku.backend.domain.report.repository.ReportLikeRepository;
 import com.sku.backend.domain.report.repository.ReportRepository;
 import com.sku.backend.domain.user.entity.User;
 import com.sku.backend.domain.user.repository.UserRepository;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,6 +27,7 @@ public class ReportService {
 
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
+    private final ReportLikeRepository reportLikeRepository;
 
     // 제보 등록
     @Transactional
@@ -73,11 +78,32 @@ public class ReportService {
                 .collect(Collectors.toList());
     }
 
-    // 제보 공감 증가
+    // 제보 공감 증감
     @Transactional
-    public void likeReport(Long reportId) {
+    public ReportLikeResponseDto toggleLike(Long reportId, Long userId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.REPORT_NOT_FOUND));
-        report.addLike();
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
+
+        Optional<ReportLike> reportLike = reportLikeRepository.findByReportAndUser(report, user);
+
+        boolean liked;
+        if (reportLike.isPresent()) {
+            reportLikeRepository.delete(reportLike.get());
+            report.decreaseLikeCount();
+            liked = false;
+        } else {
+            ReportLike newLike = ReportLike.builder()
+                    .report(report)
+                    .user(user)
+                    .build();
+            reportLikeRepository.save(newLike);
+            report.increaseLikeCount();
+            liked = true;
+        }
+
+        return ReportLikeResponseDto.of(liked, report.getLikeCount());
     }
 }
