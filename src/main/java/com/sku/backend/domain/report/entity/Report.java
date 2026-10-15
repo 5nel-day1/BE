@@ -91,4 +91,11 @@ public class Report extends BaseTimeEntity {
             this.likeCount--;
         }
     }
+
+    public void updateStatus(ReportStatus status) {
+        this.status = status;
+        if (status == ReportStatus.RESOLVED) {
+            this.resolvedAt = LocalDateTime.now();
+        }
+    }
 }

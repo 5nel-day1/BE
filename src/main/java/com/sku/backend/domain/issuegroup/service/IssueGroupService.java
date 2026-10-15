@@ -7,6 +7,7 @@ import com.sku.backend.domain.issuegroup.entity.IssueGroup;
 import com.sku.backend.domain.issuegroup.repository.AiAnalysisRepository;
 import com.sku.backend.domain.issuegroup.repository.IssueGroupRepository;
 import com.sku.backend.domain.report.entity.Report;
+import com.sku.backend.domain.report.entity.ReportStatus;
 import com.sku.backend.global.exception.CustomException;
 import com.sku.backend.global.exception.GlobalErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -122,11 +123,22 @@ public class IssueGroupService {
     }
 
     // 관리자 이슈 처리 상태 변경 (접수, 확인 중, 처리 중, 해결 완료)
+// IssueGroupService.java
     @Transactional
     public void updateIssueGroupStatus(Long issueGroupId, String newStatus) {
         IssueGroup issueGroup = issueGroupRepository.findById(issueGroupId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.ISSUE_GROUP_NOT_FOUND));
 
         issueGroup.updateStatus(newStatus);
+
+        List<AiAnalysis> analyses = aiAnalysisRepository.findByIssueGroupId(issueGroupId);
+        ReportStatus reportStatus = ReportStatus.valueOf(newStatus);
+
+        for (AiAnalysis analysis : analyses) {
+            Report report = analysis.getReport();
+            if (report != null) {
+                report.updateStatus(reportStatus);
+            }
+        }
     }
 }
