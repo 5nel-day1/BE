@@ -1,5 +1,6 @@
 package com.sku.backend.domain.report.service;
 
+import com.sku.backend.domain.issuegroup.service.IssueGroupService;
 import com.sku.backend.domain.report.dto.ReportCreateRequestDto;
 import com.sku.backend.domain.report.dto.ReportLikeResponseDto;
 import com.sku.backend.domain.report.dto.ReportResponseDto;
@@ -28,6 +29,7 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
     private final ReportLikeRepository reportLikeRepository;
+    private final IssueGroupService issueGroupService;
 
     // 제보 등록
     @Transactional
@@ -45,6 +47,13 @@ public class ReportService {
                 .build();
 
         Report savedReport = reportRepository.save(report);
+
+        try {
+            issueGroupService.processReportAiAnalysis(savedReport);
+        } catch (Exception e) {
+            throw new CustomException(GlobalErrorCode.AI_ANALYSIS_FAILED);
+        }
+
         return ReportResponseDto.from(savedReport);
     }
 

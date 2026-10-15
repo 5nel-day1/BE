@@ -36,6 +36,10 @@ public enum GlobalErrorCode implements BaseErrorCode {
     // 문제군(IssueGroup) 도메인 에러코드 (I)
     ISSUE_GROUP_NOT_FOUND("I001", "존재하지 않는 문제 그룹입니다.", HttpStatus.NOT_FOUND),
 
+    // AI 도메인 에러코드 (AI)
+    AI_ANALYSIS_FAILED("AI001", "AI 제보 분석 중 오류가 발생했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+    AI_NOT_CONFIGURED("AI002", "AI API 키가 설정되지 않았습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
+
     // 파일 업로드 도메인 에러코드 (F)
     FILE_UPLOAD_FAILED("F001", "파일 업로드에 실패했습니다.", HttpStatus.INTERNAL_SERVER_ERROR),
     INVALID_IMAGE_TYPE("F002", "지원하지 않는 이미지 형식입니다. (jpeg, png, webp만 허용)", HttpStatus.BAD_REQUEST);
