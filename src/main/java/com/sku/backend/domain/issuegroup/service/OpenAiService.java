@@ -99,7 +99,8 @@ public class OpenAiService {
                 log.warn("서버 과부하/통신 실패 (시도 횟수 {}/{}): {}", retryCount, maxRetries, e.getMessage());
 
                 if (retryCount >= maxRetries) {
-                    throw new CustomException(GlobalErrorCode.AI_ANALYSIS_FAILED);
+                    log.warn("Fallback 데이터를 반환합니다.");
+                    return createFallbackResponse(buildingCode, floorCode, spaceDetail, reportContent);
                 }
 
                 try {
@@ -110,7 +111,7 @@ public class OpenAiService {
             }
         }
 
-        throw new CustomException(GlobalErrorCode.AI_ANALYSIS_FAILED);
+        return createFallbackResponse(buildingCode, floorCode, spaceDetail, reportContent);
     }
 
     private String trimTrailingSlash(String url) {
@@ -132,5 +133,57 @@ public class OpenAiService {
             }
         }
         return trimmed.trim();
+    }
+
+    private Map<String, Object> createFallbackResponse(String buildingCode, String floorCode, String spaceDetail, String reportContent) {
+        String buildingName = convertBuildingName(buildingCode);
+        String floorName = convertFloorName(floorCode);
+        String facilityName = StringUtils.hasText(spaceDetail) ? spaceDetail : "일반 시설";
+
+        Map<String, Object> fallback = new HashMap<>();
+        fallback.put("building", buildingName);
+        fallback.put("floor", floorName);
+        fallback.put("facility", facilityName);
+        fallback.put("problemType", "기타 시설 문제");
+        fallback.put("severity", "낮음");
+        fallback.put("summaryTitle", String.format("%s %s %s", buildingName, floorName, facilityName));
+        fallback.put("aiSummary", String.format("[%s %s] 내용: %s",
+                buildingName, floorName,
+                StringUtils.hasText(reportContent) ? (reportContent.length() > 30 ? reportContent.substring(0, 30) + "..." : reportContent) : "내용 없음"));
+        fallback.put("urgencyScore", 20);
+
+        return fallback;
+    }
+
+    private String convertBuildingName(String code) {
+        if (code == null) return "기타";
+        return switch (code) {
+            case "YUDAM" -> "유담관";
+            case "MAIN" -> "본관";
+            case "MOONAE" -> "문예관";
+            case "CHEONGUN" -> "청운관";
+            case "HEEIN" -> "혜인관";
+            case "BUKGWAK" -> "북악관";
+            case "EUNJU1" -> "은주1관";
+            case "HANLIM" -> "한림관";
+            case "SUIN" -> "수인관";
+            default -> "기타";
+        };
+    }
+
+    private String convertFloorName(String code) {
+        if (code == null) return "기타";
+        return switch (code) {
+            case "B1" -> "B1층";
+            case "F1" -> "1층";
+            case "F2" -> "2층";
+            case "F3" -> "3층";
+            case "F4" -> "4층";
+            case "F5" -> "5층";
+            case "F6" -> "6층";
+            case "F7" -> "7층";
+            case "F8" -> "8층";
+            default -> "기타";
+        };
     }
 }
