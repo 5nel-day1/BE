@@ -25,8 +25,7 @@ public class CommentService {
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
 
-    // 댓글 목록 조회
-    public List<CommentResponseDto> getComments(Long reportId, String studentId) {
+    public List<CommentResponseDto> getComments(Long reportId, Long userId) {
         if (!reportRepository.existsById(reportId)) {
             throw new CustomException(GlobalErrorCode.REPORT_NOT_FOUND);
         }
@@ -42,18 +41,17 @@ public class CommentService {
         return comments.stream()
                 .map(comment -> {
                     int anonymousIndex = (int) (comment.getId() - firstCommentId + 1);
-                    return CommentResponseDto.of(comment, anonymousIndex, studentId);
+                    return CommentResponseDto.of(comment, anonymousIndex, userId);
                 })
                 .toList();
     }
 
-    // 댓글 작성
     @Transactional
-    public void createComment(Long reportId, String studentId, CommentCreateRequestDto requestDto) {
+    public void createComment(Long reportId, Long userId, CommentCreateRequestDto requestDto) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.REPORT_NOT_FOUND));
 
-        User user = userRepository.findByStudentId(studentId)
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
 
         Comment comment = Comment.builder()
@@ -65,13 +63,12 @@ public class CommentService {
         commentRepository.save(comment);
     }
 
-    // 댓글 삭제
     @Transactional
-    public void deleteComment(Long commentId, String studentId) {
+    public void deleteComment(Long commentId, Long userId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.COMMENT_NOT_FOUND));
 
-        if (!comment.getUser().getStudentId().equals(studentId)) {
+        if (!comment.getUser().getId().equals(userId)) {
             throw new CustomException(GlobalErrorCode.COMMENT_ACCESS_DENIED);
         }
 

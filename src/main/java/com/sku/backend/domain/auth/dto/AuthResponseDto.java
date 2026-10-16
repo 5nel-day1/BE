@@ -21,11 +21,15 @@ public class AuthResponseDto {
     @Schema(description = "권한", example = "STUDENT")
     private String role;
 
-    public static AuthResponseDto from(User user) {
+    @Schema(description = "Access Token", example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+    private String accessToken;
+
+    public static AuthResponseDto from(User user, String accessToken) {
         return AuthResponseDto.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .role(user.getRole().name())
+                .accessToken(accessToken)
                 .build();
     }
 }

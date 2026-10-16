@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "제보 등록 요청")
 public class ReportCreateRequestDto {
 
-    @NotNull(message = "학생 ID는 필수입니다.")
-    private Long studentId;
-
     @NotNull(message = "건물 선택은 필수입니다.")
     @Schema(description = "건물", example = "YUDAM")
     private Building building;

@@ -45,11 +45,13 @@ public class ReportResponseDto {
     private LocalDateTime createdAt;
 
     public static ReportResponseDto from(Report report) {
+        String authorName = (report.getStudent() != null) ? report.getStudent().getName() : "탈퇴한 회원";
+
         return ReportResponseDto.builder()
                 .id(report.getId())
                 .receiptNumber(report.getReceiptNumber())
                 .title(report.getTitle())
-                .studentName(report.getStudent().getName())
+                .studentName(authorName)
                 .content(report.getContent())
                 .photoUrl(report.getPhotoUrl())
                 .status(report.getStatus().name())
