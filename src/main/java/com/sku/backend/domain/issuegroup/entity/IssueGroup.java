@@ -3,6 +3,8 @@ package com.sku.backend.domain.issuegroup.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -20,7 +22,15 @@ public class IssueGroup {
     private String problemType;
     private String status;
 
+    private String resolutionContent; // 처리 결과 내용
+    private LocalDateTime resolvedAt; // 해결 완료 일시
+
     public void updateStatus(String status) {
         this.status = status;
+    }
+
+    public void updateResolution(String resolutionContent, LocalDateTime resolvedAt) {
+        this.resolutionContent = resolutionContent;
+        this.resolvedAt = resolvedAt;
     }
 }
