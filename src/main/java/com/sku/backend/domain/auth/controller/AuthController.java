@@ -9,6 +9,7 @@ import com.sku.backend.domain.auth.service.AuthService;
 import com.sku.backend.global.common.BaseResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -58,5 +59,12 @@ public class AuthController {
             @Valid @RequestBody AdminLoginRequestDto requestDto) {
         AuthResponseDto response = authService.adminLogin(requestDto);
         return ResponseEntity.ok(BaseResponse.success("관리자 로그인에 성공했습니다.", response));
+    }
+
+    @Operation(summary = "로그아웃", description = "현재 접속 중인 사용자 토큰을 무효화/로그아웃 처리합니다.")
+    @PostMapping("/logout")
+    public ResponseEntity<BaseResponse<Void>> logout(HttpServletRequest request) {
+        authService.logout(request);
+        return ResponseEntity.ok(BaseResponse.success("로그아웃에 성공했습니다.", null));
     }
 }

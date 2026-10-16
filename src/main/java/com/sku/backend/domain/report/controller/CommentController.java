@@ -4,6 +4,7 @@ import com.sku.backend.domain.report.dto.CommentCreateRequestDto;
 import com.sku.backend.domain.report.dto.CommentResponseDto;
 import com.sku.backend.domain.report.service.CommentService;
 import com.sku.backend.global.common.BaseResponse;
+import com.sku.backend.global.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -21,11 +22,9 @@ public class CommentController {
 
     @Operation(summary = "댓글 목록 조회", description = "특정 제보 글의 댓글 목록을 조회하며 익명 번호와 본인 작성 여부를 반환합니다.")
     @GetMapping
-    public BaseResponse<List<CommentResponseDto>> getComments(
-            @PathVariable Long reportId,
-            @RequestParam String studentId
-    ) {
-        List<CommentResponseDto> responseDtos = commentService.getComments(reportId, studentId);
+    public BaseResponse<List<CommentResponseDto>> getComments(@PathVariable Long reportId) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        List<CommentResponseDto> responseDtos = commentService.getComments(reportId, currentUserId);
         return BaseResponse.success(responseDtos);
     }
 
@@ -33,10 +32,10 @@ public class CommentController {
     @PostMapping
     public BaseResponse<Void> createComment(
             @PathVariable Long reportId,
-            @RequestParam String studentId,
             @RequestBody CommentCreateRequestDto requestDto
     ) {
-        commentService.createComment(reportId, studentId, requestDto);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        commentService.createComment(reportId, currentUserId, requestDto);
         return BaseResponse.success(null);
     }
 
@@ -44,10 +43,10 @@ public class CommentController {
     @DeleteMapping("/{commentId}")
     public BaseResponse<Void> deleteComment(
             @PathVariable Long reportId,
-            @PathVariable Long commentId,
-            @RequestParam String studentId
+            @PathVariable Long commentId
     ) {
-        commentService.deleteComment(commentId, studentId);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        commentService.deleteComment(commentId, currentUserId);
         return BaseResponse.success(null);
     }
 }

@@ -6,6 +6,7 @@ import com.sku.backend.domain.report.dto.ReportResponseDto;
 import com.sku.backend.domain.report.entity.ReportStatus;
 import com.sku.backend.domain.report.service.ReportService;
 import com.sku.backend.global.common.BaseResponse;
+import com.sku.backend.global.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,14 +28,16 @@ public class ReportController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BaseResponse<ReportResponseDto> createReport(@RequestBody @Valid ReportCreateRequestDto requestDto) {
-        ReportResponseDto responseDto = reportService.createReport(requestDto);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        ReportResponseDto responseDto = reportService.createReport(currentUserId, requestDto);
         return BaseResponse.success(responseDto);
     }
 
     @Operation(summary = "내 제보 목록 조회", description = "로그인한 유저(학생)의 제보 목록을 조회합니다.")
     @GetMapping("/me")
-    public BaseResponse<List<ReportResponseDto>> getMyReports(@RequestParam Long studentId) {
-        List<ReportResponseDto> responseDtos = reportService.getMyReports(studentId);
+    public BaseResponse<List<ReportResponseDto>> getMyReports() {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        List<ReportResponseDto> responseDtos = reportService.getMyReports(currentUserId);
         return BaseResponse.success(responseDtos);
     }
 
@@ -55,10 +58,9 @@ public class ReportController {
 
     @Operation(summary = "제보 공감 토글", description = "특정 제보에 유저별 공감을 누르거나 취소합니다.")
     @PostMapping("/{reportId}/like")
-    public BaseResponse<ReportLikeResponseDto> toggleLike(
-            @PathVariable Long reportId,
-            @RequestParam Long userId) {
-        ReportLikeResponseDto responseDto = reportService.toggleLike(reportId, userId);
+    public BaseResponse<ReportLikeResponseDto> toggleLike(@PathVariable Long reportId) {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        ReportLikeResponseDto responseDto = reportService.toggleLike(reportId, currentUserId);
         return BaseResponse.success(responseDto);
     }
 }

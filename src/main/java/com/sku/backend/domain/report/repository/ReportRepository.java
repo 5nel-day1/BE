@@ -3,6 +3,9 @@ package com.sku.backend.domain.report.repository;
 import com.sku.backend.domain.report.entity.Report;
 import com.sku.backend.domain.report.entity.ReportStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -14,7 +17,11 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
 
     List<Report> findAllByStatusOrderByIdDesc(ReportStatus status);
 
-    long countByStudentStudentId(String studentId);
+    long countByStudentId(Long studentId);
 
-    long countByStudentStudentIdAndStatus(String studentId, ReportStatus status);
+    long countByStudentIdAndStatus(Long studentId, ReportStatus status);
+
+    @Modifying(clearAutomatically = true)
+    @Query("UPDATE Report r SET r.student = null WHERE r.student.id = :studentId")
+    void updateStudentToNullByStudentId(@Param("studentId") Long studentId);
 }

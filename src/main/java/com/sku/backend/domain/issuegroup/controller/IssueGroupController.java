@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,6 +38,7 @@ public class IssueGroupController {
 
     @Operation(summary = "이슈 그룹 처리 상태 변경", description = "관리자가 이슈의 처리 상태(접수, 확인 중, 처리 중, 해결 완료)를 변경합니다.")
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<BaseResponse<Void>> updateIssueGroupStatus(
             @PathVariable Long id,
             @RequestBody IssueGroupStatusUpdateRequestDto requestDto) {

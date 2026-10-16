@@ -15,8 +15,9 @@ public class CommentResponseDto {
     private String createdAt;
     private boolean myComment;
 
-    public static CommentResponseDto of(Comment comment, int anonymousIndex, String currentStudentId) {
-        boolean isMy = comment.getUser().getStudentId().equals(currentStudentId);
+    public static CommentResponseDto of(Comment comment, int anonymousIndex, Long currentUserId) {
+        boolean isMy = comment.getUser() != null
+                && comment.getUser().getId().equals(currentUserId);
 
         return CommentResponseDto.builder()
                 .commentId(comment.getId())

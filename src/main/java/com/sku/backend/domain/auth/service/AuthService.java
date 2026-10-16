@@ -5,11 +5,13 @@ import com.sku.backend.domain.auth.dto.AdminSignupRequestDto;
 import com.sku.backend.domain.auth.dto.AuthResponseDto;
 import com.sku.backend.domain.auth.dto.StudentLoginRequestDto;
 import com.sku.backend.domain.auth.dto.StudentSignupRequestDto;
+import com.sku.backend.domain.auth.jwt.JwtTokenProvider;
 import com.sku.backend.domain.user.entity.Role;
 import com.sku.backend.domain.user.entity.User;
 import com.sku.backend.domain.user.repository.UserRepository;
 import com.sku.backend.global.exception.CustomException;
 import com.sku.backend.global.exception.GlobalErrorCode;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,8 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    // 학생 회원가입
     @Transactional
     public AuthResponseDto studentSignup(StudentSignupRequestDto requestDto) {
         if (!requestDto.getPassword().equals(requestDto.getPasswordConfirm())) {
@@ -52,10 +54,10 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
-        return AuthResponseDto.from(savedUser);
+        String accessToken = jwtTokenProvider.createAccessToken(savedUser.getId(), savedUser.getEmail(), savedUser.getRole().name());
+        return AuthResponseDto.from(savedUser, accessToken);
     }
 
-    // 학생 로그인
     public AuthResponseDto studentLogin(StudentLoginRequestDto requestDto) {
         User user = userRepository.findByStudentId(requestDto.getStudentId())
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
@@ -64,10 +66,10 @@ public class AuthService {
             throw new CustomException(GlobalErrorCode.INVALID_CREDENTIALS);
         }
 
-        return AuthResponseDto.from(user);
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
+        return AuthResponseDto.from(user, accessToken);
     }
 
-    // 관리자 회원가입
     @Transactional
     public AuthResponseDto adminSignup(AdminSignupRequestDto requestDto) {
         if (!requestDto.getPassword().equals(requestDto.getPasswordConfirm())) {
@@ -91,10 +93,10 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
-        return AuthResponseDto.from(savedUser);
+        String accessToken = jwtTokenProvider.createAccessToken(savedUser.getId(), null, savedUser.getRole().name());
+        return AuthResponseDto.from(savedUser, accessToken);
     }
 
-    // 관리자 로그인
     public AuthResponseDto adminLogin(AdminLoginRequestDto requestDto) {
         User user = userRepository.findByAdminCode(requestDto.getAdminCode())
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
@@ -103,6 +105,14 @@ public class AuthService {
             throw new CustomException(GlobalErrorCode.INVALID_CREDENTIALS);
         }
 
-        return AuthResponseDto.from(user);
+        String accessToken = jwtTokenProvider.createAccessToken(user.getId(), null, user.getRole().name());
+        return AuthResponseDto.from(user, accessToken);
+    }
+
+    public void logout(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            String token = bearerToken.substring(7);
+        }
     }
 }

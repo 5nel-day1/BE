@@ -33,8 +33,8 @@ public class ReportService {
 
     // 제보 등록
     @Transactional
-    public ReportResponseDto createReport(ReportCreateRequestDto requestDto) {
-        User student = userRepository.findById(requestDto.getStudentId())
+    public ReportResponseDto createReport(Long userId, ReportCreateRequestDto requestDto) {
+        User student = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
 
         Report report = Report.builder()
@@ -58,8 +58,8 @@ public class ReportService {
     }
 
     // 내 제보 목록 보기
-    public List<ReportResponseDto> getMyReports(Long studentId) {
-        List<Report> reports = reportRepository.findAllByStudentIdOrderByIdDesc(studentId);
+    public List<ReportResponseDto> getMyReports(Long userId) {
+        List<Report> reports = reportRepository.findAllByStudentIdOrderByIdDesc(userId);
         return reports.stream()
                 .map(ReportResponseDto::from)
                 .collect(Collectors.toList());
