@@ -13,7 +13,10 @@ import com.sku.backend.global.exception.GlobalErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -78,6 +81,7 @@ public class IssueGroupService {
         List<AiAnalysis> analyses = aiAnalysisRepository.findAllByOrderByUrgencyScoreDesc();
 
         return analyses.stream()
+                .filter(analysis -> !"RESOLVED".equals(analysis.getReport().getStatus().name()))
                 .map(analysis -> IssueGroupResponseDto.builder()
                         .id(analysis.getId())
                         .title(analysis.getSummaryTitle())
@@ -107,6 +111,11 @@ public class IssueGroupService {
                 .map(a -> a.getReport().getContent())
                 .collect(Collectors.toList());
 
+        String formattedResolvedAt = null;
+        if (issueGroup.getResolvedAt() != null) {
+            formattedResolvedAt = issueGroup.getResolvedAt().format(DateTimeFormatter.ofPattern("MM.dd"));
+        }
+
         return IssueGroupDetailResponseDto.builder()
                 .id(issueGroup.getId())
                 .title(issueGroup.getTitle())
@@ -119,17 +128,24 @@ public class IssueGroupService {
                 .aiSummary(representative != null ? representative.getAiSummary() : "")
                 .status(issueGroup.getStatus())
                 .reportContents(reportContents)
+                .resolutionContent(issueGroup.getResolutionContent())
+                .resolvedAt(formattedResolvedAt)
                 .build();
     }
 
-    // 관리자 이슈 처리 상태 변경 (접수, 확인 중, 처리 중, 해결 완료)
-// IssueGroupService.java
+    // 관리자 이슈 처리 상태 및 결과 변경
     @Transactional
-    public void updateIssueGroupStatus(Long issueGroupId, String newStatus) {
+    public IssueGroupDetailResponseDto updateIssueGroupStatus(Long issueGroupId, String newStatus, String resolutionContent) {
         IssueGroup issueGroup = issueGroupRepository.findById(issueGroupId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.ISSUE_GROUP_NOT_FOUND));
 
         issueGroup.updateStatus(newStatus);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if ("RESOLVED".equals(newStatus) && StringUtils.hasText(resolutionContent)) {
+            issueGroup.updateResolution(resolutionContent, now);
+        }
 
         List<AiAnalysis> analyses = aiAnalysisRepository.findByIssueGroupId(issueGroupId);
         ReportStatus reportStatus = ReportStatus.valueOf(newStatus);
@@ -138,7 +154,11 @@ public class IssueGroupService {
             Report report = analysis.getReport();
             if (report != null) {
                 report.updateStatus(reportStatus);
+                if ("RESOLVED".equals(newStatus) && StringUtils.hasText(resolutionContent)) {
+                    report.updateResolution(resolutionContent, now);
+                }
             }
         }
+        return getIssueGroupDetail(issueGroupId);
     }
 }

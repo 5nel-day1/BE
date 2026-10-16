@@ -98,4 +98,9 @@ public class Report extends BaseTimeEntity {
             this.resolvedAt = LocalDateTime.now();
         }
     }
+
+    public void updateResolution(String resolveContent, LocalDateTime resolvedAt) {
+        this.resolveContent = resolveContent;
+        this.resolvedAt = resolvedAt;
+    }
 }
