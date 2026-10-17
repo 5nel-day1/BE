@@ -28,3 +28,7 @@ app:
     base-url: https://generativelanguage.googleapis.com/v1
     api-key: ${OPENAI_API_KEY}
     model: gemini-3.8-flash
+  storage:
+    local:
+      base-dir: ${APP_STORAGE_LOCAL_BASE_DIR:./uploads}
+      base-url: ${APP_STORAGE_LOCAL_BASE_URL:http://localhost:8080/uploads}

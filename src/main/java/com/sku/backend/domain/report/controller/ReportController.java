@@ -1,22 +1,29 @@
 package com.sku.backend.domain.report.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sku.backend.domain.report.dto.ReportCreateRequestDto;
 import com.sku.backend.domain.report.dto.ReportLikeResponseDto;
 import com.sku.backend.domain.report.dto.ReportResponseDto;
 import com.sku.backend.domain.report.entity.ReportStatus;
 import com.sku.backend.domain.report.service.ReportService;
 import com.sku.backend.global.common.BaseResponse;
+import com.sku.backend.global.exception.CustomException;
+import com.sku.backend.global.exception.GlobalErrorCode;
 import com.sku.backend.global.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-@Tag(name = "Reports", description = "제보 관련 API")
+@Tag(name = "Report", description = "제보 API")
 @RestController
 @RequestMapping("/api/reports")
 @RequiredArgsConstructor
@@ -24,13 +31,28 @@ public class ReportController {
 
     private final ReportService reportService;
 
-    @Operation(summary = "제보 등록", description = "새로운 시설 불편 제보를 등록합니다.")
-    @PostMapping
+    @Operation(summary = "제보 등록", description = "새로운 시설 불편 제보를 등록합니다. 이미지는 선택 사항(최대 1장)입니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public BaseResponse<ReportResponseDto> createReport(@RequestBody @Valid ReportCreateRequestDto requestDto) {
-        Long currentUserId = SecurityUtils.getCurrentUserId();
-        ReportResponseDto responseDto = reportService.createReport(currentUserId, requestDto);
-        return BaseResponse.success(responseDto);
+    public BaseResponse<ReportResponseDto> createReport(
+            @Parameter(description = "제보 작성 정보 (JSON 문자열)", required = true)
+            @RequestPart(value = "data") String requestDtoJson,
+
+            @Parameter(description = "제보 첨부 사진 (최대 1장, 선택 사항)")
+            @RequestPart(value = "image", required = false) MultipartFile image) {
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            ReportCreateRequestDto requestDto = objectMapper.readValue(requestDtoJson, ReportCreateRequestDto.class);
+
+            Long currentUserId = SecurityUtils.getCurrentUserId();
+            ReportResponseDto responseDto = reportService.createReport(currentUserId, requestDto, image);
+            return BaseResponse.success(responseDto);
+
+        } catch (JsonProcessingException e) {
+            throw new CustomException(GlobalErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 
     @Operation(summary = "내 제보 목록 조회", description = "로그인한 유저(학생)의 제보 목록을 조회합니다.")

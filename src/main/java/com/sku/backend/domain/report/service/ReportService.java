@@ -13,9 +13,11 @@ import com.sku.backend.domain.user.entity.User;
 import com.sku.backend.domain.user.repository.UserRepository;
 import com.sku.backend.global.exception.CustomException;
 import com.sku.backend.global.exception.GlobalErrorCode;
+import com.sku.backend.global.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,12 +32,19 @@ public class ReportService {
     private final UserRepository userRepository;
     private final ReportLikeRepository reportLikeRepository;
     private final IssueGroupService issueGroupService;
+    private final FileStorageService fileStorageService;
 
     // 제보 등록
     @Transactional
-    public ReportResponseDto createReport(Long userId, ReportCreateRequestDto requestDto) {
+    public ReportResponseDto createReport(Long userId, ReportCreateRequestDto requestDto, MultipartFile image) {
         User student = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
+
+        String photoUrl = null;
+
+        if (image != null && !image.isEmpty()) {
+            photoUrl = fileStorageService.upload(image, "reports");
+        }
 
         Report report = Report.builder()
                 .student(student)
@@ -43,7 +52,7 @@ public class ReportService {
                 .floor(requestDto.getFloor())
                 .spaceDetail(requestDto.getSpaceDetail())
                 .content(requestDto.getContent())
-                .photoUrl(requestDto.getPhotoUrl())
+                .photoUrl(photoUrl)
                 .build();
 
         Report savedReport = reportRepository.save(report);

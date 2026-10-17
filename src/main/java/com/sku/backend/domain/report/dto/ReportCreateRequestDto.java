@@ -7,8 +7,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @Schema(description = "제보 등록 요청")
 public class ReportCreateRequestDto {
@@ -28,7 +30,4 @@ public class ReportCreateRequestDto {
     @NotBlank(message = "내용은 필수 입력 값입니다.")
     @Schema(description = "문제 내용", example = "세면대 물이 너무 천천히 내려가요.")
     private String content;
-
-    @Schema(description = "첨부 사진 URL", example = "https://...")
-    private String photoUrl;
 }
