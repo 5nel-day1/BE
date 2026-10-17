@@ -60,7 +60,7 @@ public class LocalFileStorageService implements FileStorageService {
             throw new CustomException(GlobalErrorCode.FILE_UPLOAD_FAILED);
         }
 
-        return baseUrl + "/" + sanitizeDirectory(directory) + "/" + filename;
+        return "/uploads/" + sanitizeDirectory(directory) + "/" + filename;
     }
 
     @Override
