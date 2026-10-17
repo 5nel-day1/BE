@@ -63,26 +63,38 @@ public class ReportService {
             throw new CustomException(GlobalErrorCode.AI_ANALYSIS_FAILED);
         }
 
-        return ReportResponseDto.from(savedReport);
+        return ReportResponseDto.from(savedReport, false);
     }
 
     // 내 제보 목록 보기
     public List<ReportResponseDto> getMyReports(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
+
         List<Report> reports = reportRepository.findAllByStudentIdOrderByIdDesc(userId);
         return reports.stream()
-                .map(ReportResponseDto::from)
+                .map(report -> {
+                    boolean liked = reportLikeRepository.findByReportAndUser(report, user).isPresent();
+                    return ReportResponseDto.from(report, liked);
+                })
                 .collect(Collectors.toList());
     }
 
     // 제보 상세 조회
-    public ReportResponseDto getReportDetail(Long reportId) {
+    public ReportResponseDto getReportDetail(Long reportId, Long userId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new CustomException(GlobalErrorCode.REPORT_NOT_FOUND));
-        return ReportResponseDto.from(report);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
+
+        boolean liked = reportLikeRepository.findByReportAndUser(report, user).isPresent();
+
+        return ReportResponseDto.from(report, liked);
     }
 
     // 전체 제보 목록 조회
-    public List<ReportResponseDto> getAllReports(ReportStatus status) {
+    public List<ReportResponseDto> getAllReports(ReportStatus status, Long userId) {
         List<Report> reports;
 
         if (status == null) {
@@ -91,8 +103,14 @@ public class ReportService {
             reports = reportRepository.findAllByStatusOrderByIdDesc(status);
         }
 
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new CustomException(GlobalErrorCode.USER_NOT_FOUND));
+
         return reports.stream()
-                .map(ReportResponseDto::from)
+                .map(report -> {
+                    boolean liked = reportLikeRepository.findByReportAndUser(report, user).isPresent();
+                    return ReportResponseDto.from(report, liked);
+                })
                 .collect(Collectors.toList());
     }
 

@@ -47,7 +47,8 @@ public class ReportController {
         return BaseResponse.success(responseDto);
     }
 
-    @Operation(summary = "내 제보 목록 조회", description = "로그인한 유저(학생)의 제보 목록을 조회합니다.")
+    @Operation(summary = "내 제보 목록 조회", description = "로그인한 유저(학생)의 제보 목록을 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/me")
     public BaseResponse<List<ReportResponseDto>> getMyReports() {
         Long currentUserId = SecurityUtils.getCurrentUserId();
@@ -55,22 +56,27 @@ public class ReportController {
         return BaseResponse.success(responseDtos);
     }
 
-    @Operation(summary = "제보 상세 조회", description = "특정 제보의 상세 정보와 처리 상태를 조회합니다.")
+    @Operation(summary = "제보 상세 조회", description = "특정 제보의 상세 정보와 처리 상태를 조회합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping("/{reportId}")
     public BaseResponse<ReportResponseDto> getReportDetail(@PathVariable Long reportId) {
-        ReportResponseDto responseDto = reportService.getReportDetail(reportId);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        ReportResponseDto responseDto = reportService.getReportDetail(reportId, currentUserId);
         return BaseResponse.success(responseDto);
     }
 
-    @Operation(summary = "전체 제보 목록 조회", description = "학생 홈 화면의 전체 제보 피드를 조회합니다. status 파라미터로 필터링 가능합니다.")
+    @Operation(summary = "전체 제보 목록 조회", description = "학생 홈 화면의 전체 제보 피드를 조회합니다. status 파라미터로 필터링 가능합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @GetMapping
     public BaseResponse<List<ReportResponseDto>> getAllReports(
             @RequestParam(required = false) ReportStatus status) {
-        List<ReportResponseDto> responseDtos = reportService.getAllReports(status);
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        List<ReportResponseDto> responseDtos = reportService.getAllReports(status, currentUserId);
         return BaseResponse.success(responseDtos);
     }
 
-    @Operation(summary = "제보 공감 토글", description = "특정 제보에 유저별 공감을 누르거나 취소합니다.")
+    @Operation(summary = "제보 공감 토글", description = "특정 제보에 유저별 공감을 누르거나 취소합니다.",
+            security = @SecurityRequirement(name = "bearerAuth"))
     @PostMapping("/{reportId}/like")
     public BaseResponse<ReportLikeResponseDto> toggleLike(@PathVariable Long reportId) {
         Long currentUserId = SecurityUtils.getCurrentUserId();

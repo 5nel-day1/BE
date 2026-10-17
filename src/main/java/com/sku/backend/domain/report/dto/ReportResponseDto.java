@@ -35,6 +35,9 @@ public class ReportResponseDto {
     @Schema(description = "공감 개수", example = "4")
     private int likeCount;
 
+    @Schema(description = "현재 사용자의 공감 여부", example = "true")
+    private Boolean liked;
+
     @Schema(description = "처리 결과 내용 (해결 완료 시)", example = "핸드타올 디스펜서를 수리하고 비누를 보충했습니다.")
     private String resolveContent;
 
@@ -44,7 +47,7 @@ public class ReportResponseDto {
     @Schema(description = "접수 일시", example = "2026-10-14T12:22:00")
     private LocalDateTime createdAt;
 
-    public static ReportResponseDto from(Report report) {
+    public static ReportResponseDto from(Report report, boolean liked) {
         String authorName = (report.getStudent() != null) ? report.getStudent().getName() : "탈퇴한 회원";
 
         return ReportResponseDto.builder()
@@ -56,9 +59,14 @@ public class ReportResponseDto {
                 .photoUrl(report.getPhotoUrl())
                 .status(report.getStatus().name())
                 .likeCount(report.getLikeCount())
+                .liked(liked)
                 .resolveContent(report.getResolveContent())
                 .resolvedAt(report.getResolvedAt())
                 .createdAt(report.getCreatedAt())
                 .build();
+    }
+
+    public static ReportResponseDto from(Report report) {
+        return from(report, false);
     }
 }
