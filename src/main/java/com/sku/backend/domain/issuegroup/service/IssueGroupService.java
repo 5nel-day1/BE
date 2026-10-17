@@ -48,9 +48,8 @@ public class IssueGroupService {
         String problemType = (String) aiResult.get("problemType");
         String summaryTitle = (String) aiResult.get("summaryTitle");
 
-        // 유사 제보 묶기
         IssueGroup issueGroup = issueGroupRepository
-                .findByBuildingAndFacilityAndProblemType(building, facility, problemType)
+                .findByBuildingAndFacilityAndProblemTypeAndStatusNot(building, facility, problemType, "RESOLVED")
                 .orElseGet(() -> {
                     IssueGroup newGroup = IssueGroup.builder()
                             .title(summaryTitle)
@@ -86,7 +85,6 @@ public class IssueGroupService {
         LocalDate oneWeekAgo = today.minusDays(7);
 
         return issueGroups.stream()
-                .filter(group -> !"RESOLVED".equals(group.getStatus()))
                 .map(group -> {
                     List<AiAnalysis> analyses = aiAnalysisRepository.findByIssueGroupId(group.getId());
                     if (analyses.isEmpty()) return null;
@@ -130,7 +128,7 @@ public class IssueGroupService {
         AiAnalysis representative = analyses.isEmpty() ? null : analyses.get(0);
 
         List<String> reportContents = analyses.stream()
-                .map(a -> a.getReport().getContent())
+                .map(a -> a.getReport() != null ? a.getReport().getContent() : "")
                 .collect(Collectors.toList());
 
         String formattedResolvedAt = null;
