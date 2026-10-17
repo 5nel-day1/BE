@@ -2,6 +2,7 @@ package com.sku.backend.domain.issuegroup.service;
 
 import com.sku.backend.domain.issuegroup.dto.IssueGroupDetailResponseDto;
 import com.sku.backend.domain.issuegroup.dto.IssueGroupResponseDto;
+import com.sku.backend.domain.issuegroup.dto.ReportTrendDto;
 import com.sku.backend.domain.issuegroup.entity.AiAnalysis;
 import com.sku.backend.domain.issuegroup.entity.IssueGroup;
 import com.sku.backend.domain.issuegroup.repository.AiAnalysisRepository;
@@ -15,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -75,25 +78,44 @@ public class IssueGroupService {
         aiAnalysisRepository.save(aiAnalysis);
     }
 
-    // 관리자 대시보드: 점검 필요도가 높은 순서대로 조회
+    // 관리자 대시보드: 최근 7일 가중치 반영 점수가 높은 순서대로 이슈 그룹 조회
     @Transactional(readOnly = true)
     public List<IssueGroupResponseDto> getAdminIssueGroups() {
-        List<AiAnalysis> analyses = aiAnalysisRepository.findAllByOrderByUrgencyScoreDesc();
+        List<IssueGroup> issueGroups = issueGroupRepository.findAll();
+        LocalDate today = LocalDate.now();
+        LocalDate oneWeekAgo = today.minusDays(7);
 
-        return analyses.stream()
-                .filter(analysis -> !"RESOLVED".equals(analysis.getReport().getStatus().name()))
-                .map(analysis -> IssueGroupResponseDto.builder()
-                        .id(analysis.getId())
-                        .title(analysis.getSummaryTitle())
-                        .building(analysis.getBuilding())
-                        .floor(analysis.getFloor())
-                        .facility(analysis.getFacility())
-                        .problemType(analysis.getProblemType())
-                        .severity(analysis.getSeverity())
-                        .urgencyScore(analysis.getUrgencyScore())
-                        .aiSummary(analysis.getAiSummary())
-                        .status(analysis.getReport().getStatus().name())
-                        .build())
+        return issueGroups.stream()
+                .filter(group -> !"RESOLVED".equals(group.getStatus()))
+                .map(group -> {
+                    List<AiAnalysis> analyses = aiAnalysisRepository.findByIssueGroupId(group.getId());
+                    if (analyses.isEmpty()) return null;
+
+                    AiAnalysis representative = analyses.get(0);
+
+                    long recentWeekCount = analyses.stream()
+                            .filter(a -> a.getReport() != null && a.getReport().getCreatedAt() != null &&
+                                    !a.getReport().getCreatedAt().toLocalDate().isBefore(oneWeekAgo))
+                            .count();
+
+                    int baseScore = representative.getUrgencyScore() != null ? representative.getUrgencyScore() : 0;
+                    int calculatedUrgencyScore = (int) (baseScore + (recentWeekCount * 10));
+
+                    return IssueGroupResponseDto.builder()
+                            .id(group.getId())
+                            .title(group.getTitle())
+                            .building(group.getBuilding())
+                            .floor(representative.getFloor())
+                            .facility(group.getFacility())
+                            .problemType(group.getProblemType())
+                            .severity(representative.getSeverity())
+                            .urgencyScore(calculatedUrgencyScore)
+                            .aiSummary(representative.getAiSummary())
+                            .status(group.getStatus())
+                            .build();
+                })
+                .filter(dto -> dto != null)
+                .sorted(Comparator.comparingInt(IssueGroupResponseDto::getUrgencyScore).reversed())
                 .collect(Collectors.toList());
     }
 
@@ -116,6 +138,36 @@ public class IssueGroupService {
             formattedResolvedAt = issueGroup.getResolvedAt().format(DateTimeFormatter.ofPattern("MM.dd"));
         }
 
+        LocalDate today = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        LocalDate oneWeekAgo = today.minusDays(7);
+        long recentWeekCount = analyses.stream()
+                .filter(a -> a.getReport() != null && a.getReport().getCreatedAt() != null &&
+                        !a.getReport().getCreatedAt().toLocalDate().isBefore(oneWeekAgo))
+                .count();
+
+        int baseScore = representative != null && representative.getUrgencyScore() != null ? representative.getUrgencyScore() : 0;
+        int calculatedUrgencyScore = (int) (baseScore + (recentWeekCount * 10));
+
+        List<LocalDate> targetDates = List.of(
+                today.minusDays(2),
+                today.minusDays(1),
+                today
+        );
+
+        Map<LocalDate, Long> reportCountMap = analyses.stream()
+                .map(a -> a.getReport() != null && a.getReport().getCreatedAt() != null ? a.getReport().getCreatedAt().toLocalDate() : null)
+                .filter(date -> date != null)
+                .collect(Collectors.groupingBy(date -> date, Collectors.counting()));
+
+        List<ReportTrendDto> reportTrend = targetDates.stream()
+                .map(date -> ReportTrendDto.builder()
+                        .date(date.format(formatter))
+                        .count(reportCountMap.getOrDefault(date, 0L))
+                        .build())
+                .collect(Collectors.toList());
+
         return IssueGroupDetailResponseDto.builder()
                 .id(issueGroup.getId())
                 .title(issueGroup.getTitle())
@@ -124,12 +176,13 @@ public class IssueGroupService {
                 .facility(issueGroup.getFacility())
                 .problemType(issueGroup.getProblemType())
                 .severity(representative != null ? representative.getSeverity() : "보통")
-                .urgencyScore(representative != null ? representative.getUrgencyScore() : 0)
+                .urgencyScore(calculatedUrgencyScore)
                 .aiSummary(representative != null ? representative.getAiSummary() : "")
                 .status(issueGroup.getStatus())
                 .reportContents(reportContents)
                 .resolutionContent(issueGroup.getResolutionContent())
                 .resolvedAt(formattedResolvedAt)
+                .reportTrend(reportTrend)
                 .build();
     }
 

@@ -22,4 +22,6 @@ public class IssueGroupDetailResponseDto {
 
     private String resolutionContent; // 처리 결과 내용
     private String resolvedAt;        // 해결 완료 날짜
+
+    private List<ReportTrendDto> reportTrend; // 최근 3일 제보 추이
 }
