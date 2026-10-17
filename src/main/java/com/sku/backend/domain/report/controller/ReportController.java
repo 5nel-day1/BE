@@ -1,15 +1,11 @@
 package com.sku.backend.domain.report.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sku.backend.domain.report.dto.ReportCreateRequestDto;
 import com.sku.backend.domain.report.dto.ReportLikeResponseDto;
 import com.sku.backend.domain.report.dto.ReportResponseDto;
 import com.sku.backend.domain.report.entity.ReportStatus;
 import com.sku.backend.domain.report.service.ReportService;
 import com.sku.backend.global.common.BaseResponse;
-import com.sku.backend.global.exception.CustomException;
-import com.sku.backend.global.exception.GlobalErrorCode;
 import com.sku.backend.global.security.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -36,23 +32,19 @@ public class ReportController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
     public BaseResponse<ReportResponseDto> createReport(
-            @Parameter(description = "제보 작성 정보 (JSON 문자열)", required = true)
-            @RequestPart(value = "data") String requestDtoJson,
+            @Parameter(
+                    description = "제보 작성 정보",
+                    required = true,
+                    content = @io.swagger.v3.oas.annotations.media.Content(mediaType = MediaType.APPLICATION_JSON_VALUE)
+            )
+            @RequestPart(value = "data") ReportCreateRequestDto requestDto,
 
             @Parameter(description = "제보 첨부 사진 (최대 1장, 선택 사항)")
             @RequestPart(value = "image", required = false) MultipartFile image) {
 
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            ReportCreateRequestDto requestDto = objectMapper.readValue(requestDtoJson, ReportCreateRequestDto.class);
-
-            Long currentUserId = SecurityUtils.getCurrentUserId();
-            ReportResponseDto responseDto = reportService.createReport(currentUserId, requestDto, image);
-            return BaseResponse.success(responseDto);
-
-        } catch (JsonProcessingException e) {
-            throw new CustomException(GlobalErrorCode.INVALID_INPUT_VALUE);
-        }
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        ReportResponseDto responseDto = reportService.createReport(currentUserId, requestDto, image);
+        return BaseResponse.success(responseDto);
     }
 
     @Operation(summary = "내 제보 목록 조회", description = "로그인한 유저(학생)의 제보 목록을 조회합니다.")
